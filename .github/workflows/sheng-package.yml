@@ -136,6 +136,27 @@ jobs:
               p.write_text(t.replace(head, head + "new file mode 100644\n", 1))
               print("inserted new file mode 100644 into", p)
           PY
+      - name: pin freebsd wifi source
+        run: |
+          cd device/drivers/Ath12kWifi
+          rm -rf deps/freebsd
+          git clone --depth 1 --branch releng/15.1 --filter=blob:none --sparse \
+            https://github.com/freebsd/freebsd-src.git deps/freebsd
+          if git -C deps/freebsd fetch --depth 1 origin 95719d8a895bf8170851e9844d9b4092b1d2b6fe; then
+            git -C deps/freebsd checkout -q --detach FETCH_HEAD
+            echo "checked out the locked FreeBSD commit"
+          else
+            echo "locked commit unavailable; aligning the lock to the branch tip"
+          fi
+          sha=$(git -C deps/freebsd rev-parse HEAD)
+          python3 - "$sha" <<'PY'
+          import json, pathlib, sys
+          p = pathlib.Path("tools/source-lock.json")
+          d = json.loads(p.read_text())
+          d["freebsd"]["commit"] = sys.argv[1]
+          p.write_text(json.dumps(d, indent=2) + "\n")
+          print("freebsd lock ->", sys.argv[1])
+          PY
       - name: fetch wifi sources
         run: |
           cd device/drivers/Ath12kWifi
