@@ -203,6 +203,12 @@ jobs:
           py_compile.compile(str(p), doraise=True)
           print("syntax check passed")
           PY
+      - name: extract xiaomi firmware inputs
+        working-directory: device
+        run: |
+          python3 scripts/download-sheng-firmware.py
+          python3 scripts/extract-sheng-firmware.py --delete-archive
+          ls -l .cache/firmware/qcom/sm8550/sheng/vpu30_4v.mbn
       - name: package
         working-directory: device
         env:
