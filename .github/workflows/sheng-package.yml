@@ -164,13 +164,17 @@ jobs:
           python3 tools/fetch-sources.py --check
       - name: drop unappliable diagnostics patch
         run: |
-          f=device/patches/xnu-12377/series
-          if grep -q 'sheng-startup-failure-log' "$f"; then
-            sed -i '/sheng-startup-failure-log\.patch/d' "$f"
-            echo "dropped sheng-startup-failure-log.patch from the series"
-          fi
-          echo "series now has $(grep -c . "$f") patches"
-          grep -n 'startup-failure\|process-exit' "$f" || true
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("device/patches/xnu-12377/series")
+          lines = p.read_text().splitlines(keepends=True)
+          kept = [l for l in lines if "sheng-startup-failure-log" not in l]
+          p.write_text("".join(kept))
+          print("series entries:", len([l for l in kept if l.strip()]))
+          for l in kept:
+              if "process-exit" in l or "startup-failure" in l:
+                  print("  ", l.strip())
+          PY
       - name: package
         working-directory: device
         env:
