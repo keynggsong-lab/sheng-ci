@@ -175,6 +175,34 @@ jobs:
               if "process-exit" in l or "startup-failure" in l:
                   print("  ", l.strip())
           PY
+      - name: bridge ios cfg fix
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("UniXNU/scripts/build-adreno-metal-bridge.py")
+          t = p.read_text()
+          anchor = "env = dict(os.environ, NMB_COMPONENT_ID=component_id"
+          assert anchor in t, "anchor not found in build-adreno-metal-bridge.py"
+          snippet = (
+              "if args.target in ('ios', 'ios27'):" + chr(10) +
+              "    copied = SOURCE / 'crates/metal2vulkan-runtime/src/copied.rs'" + chr(10) +
+              "    text = copied.read_text()" + chr(10) +
+              "    marker = '#[cfg(target_os = " + chr(34) + "macos" + chr(34) + ")]' + chr(10) + 'pub(crate) fn read_pages'" + chr(10) +
+              "    repl = '#[cfg(any(target_os = " + chr(34) + "macos" + chr(34) + ", target_os = " + chr(34) + "ios" + chr(34) + "))]' + chr(10) + 'pub(crate) fn read_pages'" + chr(10) +
+              "    if marker in text:" + chr(10) +
+              "        copied.write_text(text.replace(marker, repl, 1))" + chr(10) +
+              "        print('iOS: extended the macOS read_pages implementation to iOS')" + chr(10) +
+              "    else:" + chr(10) +
+              "        print('iOS: read_pages marker not found; left the source unchanged')" + chr(10)
+          )
+          p.write_text(t.replace(anchor, snippet + anchor, 1))
+          print("patched build-adreno-metal-bridge.py")
+
+          # 校验：注入后语法应可编译
+          import py_compile
+          py_compile.compile(str(p), doraise=True)
+          print("syntax check passed")
+          PY
       - name: package
         working-directory: device
         env:
