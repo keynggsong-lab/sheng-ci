@@ -208,6 +208,8 @@ jobs:
         run: |
           python3 scripts/download-sheng-firmware.py
           python3 scripts/extract-sheng-firmware.py --delete-archive
+          python3 scripts/extract-files.py --section Video
+          python3 scripts/extract-files.py --section Video --check
           ls -l .cache/firmware/qcom/sm8550/sheng/vpu30_4v.mbn
       - name: package
         working-directory: device
