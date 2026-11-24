@@ -161,7 +161,7 @@ jobs:
         run: |
           cd device/drivers/Ath12kWifi
           ./tools/fetch-sources.sh
-          ./tools/fetch-sources.py --check
+          python3 tools/fetch-sources.py --check
       - name: package
         working-directory: device
         env:
