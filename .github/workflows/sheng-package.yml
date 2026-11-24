@@ -180,4 +180,13 @@ jobs:
             UniXNU/out/sheng/*/*/kernel/kernel.macho
             UniXNU/out/sheng/*/*/package.manifest.json
 
-
+      - name: upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: logs-${{ github.run_id }}
+          retention-days: 3
+          if-no-files-found: ignore
+          path: |
+            UniXNU/out/sheng/*/*/logs/*.log
+            UniXNU/out/sheng/*/*/kernel/*.log
