@@ -1,4 +1,4 @@
-name: sheng-package
+﻿name: sheng-package
 # scripts/package.sh of this repository on a macOS runner, with the UniXNU and uefi-sheng
 # checkouts beside it, the layout board.toml names. The platform seed comes from the
 # repository secret UNIXNU_UNIQUE_CHIP_ID and is baked into the images, so the run's
@@ -122,6 +122,20 @@ jobs:
           if not path.is_file() and os.environ['INIT_DATA'] != 'true':
               raise SystemExit('No saved seed. Supply the ORIGINAL seed for an existing installation, or select init_data for a FIRST installation')
           PY
+      - name: fix pinned mesa patch header
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("UniXNU/patches/mesa/turnip-frame-diagnostics.patch")
+          t = p.read_text()
+          head = "diff --git a/src/freedreno/vulkan/tu_frame_diagnostic.h b/src/freedreno/vulkan/tu_frame_diagnostic.h\n"
+          if "new file mode 100644" in t:
+              print("already fixed:", p)
+          else:
+              assert head in t, "unexpected patch header: " + p.as_posix()
+              p.write_text(t.replace(head, head + "new file mode 100644\n", 1))
+              print("inserted new file mode 100644 into", p)
+          PY
       - name: package
         working-directory: device
         env:
@@ -190,3 +204,4 @@ jobs:
           path: |
             UniXNU/out/sheng/*/*/logs/*.log
             UniXNU/out/sheng/*/*/kernel/*.log
+
