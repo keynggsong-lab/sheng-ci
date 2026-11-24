@@ -136,6 +136,11 @@ jobs:
               p.write_text(t.replace(head, head + "new file mode 100644\n", 1))
               print("inserted new file mode 100644 into", p)
           PY
+      - name: fetch wifi sources
+        run: |
+          cd device/drivers/Ath12kWifi
+          ./tools/fetch-sources.sh
+          ./tools/fetch-sources.py --check
       - name: package
         working-directory: device
         env:
