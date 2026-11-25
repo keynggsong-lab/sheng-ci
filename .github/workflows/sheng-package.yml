@@ -208,9 +208,9 @@ jobs:
         run: |
           python3 scripts/download-sheng-firmware.py
           python3 scripts/extract-sheng-firmware.py --delete-archive
-          python3 scripts/extract-files.py --section Video
-          python3 scripts/extract-files.py --section Video --check
-          ls -l .cache/firmware/qcom/sm8550/sheng/vpu30_4v.mbn
+          python3 scripts/extract-files.py
+          python3 scripts/extract-files.py --check
+          ls -l .cache/firmware/qcom/sm8550/sheng/vpu30_4v.mbn .cache/firmware/nanosic/MCU_Upgrade.bin
       - name: complete components and relax unused-const warning
         run: |
           python3 - <<'PY'
