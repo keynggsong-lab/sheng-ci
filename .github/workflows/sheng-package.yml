@@ -211,87 +211,34 @@ jobs:
           python3 scripts/extract-files.py
           python3 scripts/extract-files.py --check
           ls -l .cache/firmware/qcom/sm8550/sheng/vpu30_4v.mbn .cache/firmware/nanosic/MCU_Upgrade.bin
-      - name: complete components and relax unused-const warning
+      - name: minimal device patches (no config changes)
         run: |
           python3 - <<'PY'
           from pathlib import Path
 
-          # 1. board.toml: 把 iPadOS 27 基础组件列表补齐到与 17/26 override 一致
-          wanted = ["ArmDTPlatform", "ArmCpu", "SoftwareAES", "ShengUfs", "VirtioMmioBlock",
-                    "RamBlock", "Adreno740", "AdrenoMetal", "GopFramebuffer", "ShengHidInput",
-                    "ShengNovatekTouch", "QcomGeniSpi", "AppleKeyStoreState", "XnuPrelink",
-                    "DarwinBoot", "VerifiedRoot", "ShengPreflight", "AirNir", "Ath12kWifi"]
-          p = Path("device/board.toml")
-          lines = p.read_text().splitlines(keepends=True)
-          done = False
-          for i, line in enumerate(lines):
-              if line.strip() == '["components"]':
-                  for j in range(i + 1, min(i + 8, len(lines))):
-                      if '"include"' in lines[j]:
-                          lines[j] = '"include" = [' + ', '.join('"%s"' % n for n in wanted) + ']\n'
-                          done = True
-                          break
-                  break
-          assert done, "components include not found"
-          p.write_text(''.join(lines))
-          print("components:", len(wanted))
-
-          # 2. 核心脚本: 关掉 unused-const-variable（KeyboardProbe 的 kClamshellLog 在 iOS 配置下被 #if 掉）
-          s = Path("UniXNU/scripts/build-sheng-source-drivers.py")
-          text = s.read_text()
-          flag = "'-Wno-deprecated-enum-enum-conversion'"
-          if flag in text and '-Wno-unused-const-variable' not in text:
-              s.write_text(text.replace(flag, flag + ", '-Wno-unused-const-variable'", 1))
-              print("added -Wno-unused-const-variable")
-          else:
-              print("flag edit skipped")
-          # 3. KeyboardProbe: iOS 配置下 #if 掉 kClamshellLog 的使用处，标记为 maybe_unused
+          # 1. KeyboardProbe: iOS 配置下 kClamshellLog 的使用处被 #if 掉
           kp = Path("device/package/KeyboardProbe.cpp")
           text = kp.read_text()
           needle = 'static const char kClamshellLog[] KEYBOARD_CONST'
           if needle in text and '[[maybe_unused]] ' + needle not in text:
               kp.write_text(text.replace(needle, '[[maybe_unused]] ' + needle, 1))
               print("KeyboardProbe: kClamshellLog marked maybe_unused")
-          else:
-              print("KeyboardProbe: marker present or already patched")
-          # 4. 给所有 probe 源文件加文件级 pragma，抑制 iOS 配置下未使用符号的 -Werror
+
+          # 2. 给所有 probe 源文件加文件级 pragma，抑制 iOS 配置下的未使用告警
           pragma = ('#pragma clang diagnostic ignored "-Wunused-const-variable"' + chr(10) +
                     '#pragma clang diagnostic ignored "-Wunused-function"' + chr(10))
           count = 0
           for cpp in sorted(Path("device/package").glob("*.cpp")):
-              text = cpp.read_text()
-              if 'Wunused-const-variable' in text:
+              body = cpp.read_text()
+              if 'Wunused-const-variable' in body:
                   continue
-              cpp.write_text(pragma + text)
+              cpp.write_text(pragma + body)
               count += 1
           print("pragma added to", count, "package sources")
-          # 5. 把 26 profile 的完整归档配方并入 27 profile（27 的列表缺 9 项）
-          merged = ["build-corecrypto-14.py", "build-corecrypto-14.py --namespace",
-                    "component:ArmDTPlatform", "component:ArmCpu",
-                    "component:SoftwareAES", "build-software-aes-bindings.py",
-                    "component:ShengUfs",
-                    "build-sheng-source-storage.py --policy-dir scripts/policies/ipados-27.0.1-24A446",
-                    "component:VirtioMmioBlock", "component:RamBlock",
-                    "build-mockfs-fixture.py", "build-boot-progress.py",
-                    "build-libpthread-kernel.py", "component:Adreno740",
-                    "fetch-sheng-dts.py", "fetch-adreno-inputs.py",
-                    "prepare-sheng-gmu.py", "prepare-sheng-gpu-smmu.py", "prepare-sheng-gmu-votes.py",
-                    "build-adreno740-kits.py", "build-adreno740-accelerator.py",
-                    "component:ShengHidInput", "component:AppleKeyStoreState",
-                    "build-gop-legacy-display-27.py", "build-fileset-release-reference.py --tree . --lto"]
-          lines = p.read_text().splitlines(keepends=True)
-          replaced = False
-          for i, line in enumerate(lines):
-              if '"archives"' in line and not replaced:
-                  lines[i] = '"archives" = [' + ', '.join('"%s"' % x for x in merged) + ']\n'
-                  replaced = True
-                  break
-          assert replaced, "kernel archives not found"
-          p.write_text(''.join(lines))
-          print("archives:", len(merged))
-          # 6. 27 profile 链接桩：这些符号只在 macOS 构建里定义，iOS 27 的静态内核链接不允许弱缺失
+
+          # 3. 链接桩：原始 iPadOS 27 配置下缺失的符号（上游只在 macOS 构建里定义）
           stubs = (
-              '// Link stubs for the iPadOS 27 build: these symbols exist only in the macOS archives.' + chr(10) +
+              '// Link stubs for the stock iPadOS 27 profile: these exist only in the macOS archives.' + chr(10) +
               'extern "C" {' + chr(10) +
               'unsigned long long cs_native4k_digest_wall[2] = {0, 0};' + chr(10) +
               'unsigned long long cs_native4k_digest_cpu[2] = {0, 0};' + chr(10) +
@@ -303,13 +250,13 @@ jobs:
               'void iokit_physical_descriptor_close_notify(void) {}' + chr(10) +
               'void sheng_ethernet_probe(void) {}' + chr(10) +
               'void sheng_software_aes_probe(void) {}' + chr(10) +
-          'int sheng_boot_watchdog_policy(void *, unsigned long long) { return 0; }' + chr(10) +
+              'int sheng_boot_watchdog_policy(void *, unsigned long long) { return 0; }' + chr(10) +
               '}' + chr(10)
           )
           bp = Path("device/package/ButtonProbe.cpp")
-          bt = bp.read_text()
-          if 'cs_native4k_digest_wall' not in bt:
-              bp.write_text(bt + chr(10) + stubs)
+          body = bp.read_text()
+          if 'cs_native4k_digest_wall' not in body:
+              bp.write_text(body + chr(10) + stubs)
               print("link stubs appended to ButtonProbe.cpp")
           else:
               print("stubs already present")
