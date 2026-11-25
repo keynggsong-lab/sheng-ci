@@ -253,7 +253,8 @@ jobs:
               kp.write_text(text.replace(needle, '[[maybe_unused]] ' + needle, 1))
               print("KeyboardProbe: kClamshellLog marked maybe_unused")
           else:
-              print("KeyboardProbe: marker present or already patched")          PY
+              print("KeyboardProbe: marker present or already patched")
+          PY
       - name: package
         working-directory: device
         env:
