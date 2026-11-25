@@ -289,7 +289,29 @@ jobs:
           assert replaced, "kernel archives not found"
           p.write_text(''.join(lines))
           print("archives:", len(merged))
-          PY
+          # 6. 27 profile 链接桩：这些符号只在 macOS 构建里定义，iOS 27 的静态内核链接不允许弱缺失
+          stubs = (
+              '// Link stubs for the iPadOS 27 build: these symbols exist only in the macOS archives.' + chr(10) +
+              'extern "C" {' + chr(10) +
+              'unsigned long long cs_native4k_digest_wall[2] = {0, 0};' + chr(10) +
+              'unsigned long long cs_native4k_digest_cpu[2] = {0, 0};' + chr(10) +
+              'unsigned long long cs_native4k_digest_bytes[2] = {0, 0};' + chr(10) +
+              'unsigned long long cs_native4k_chunk_ticks = 0;' + chr(10) +
+              'unsigned long long cs_native4k_record_ticks = 0;' + chr(10) +
+              'const unsigned native_legacy_request_layout[6] = {17, 81, 792, 804, 816, 2624};' + chr(10) +
+              'void ml_static_mfree_prepare(void) {}' + chr(10) +
+              'void iokit_physical_descriptor_close_notify(void) {}' + chr(10) +
+              'void sheng_ethernet_probe(void) {}' + chr(10) +
+              'void sheng_software_aes_probe(void) {}' + chr(10) +
+              '}' + chr(10)
+          )
+          bp = Path("device/package/ButtonProbe.cpp")
+          bt = bp.read_text()
+          if 'cs_native4k_digest_wall' not in bt:
+              bp.write_text(bt + chr(10) + stubs)
+              print("link stubs appended to ButtonProbe.cpp")
+          else:
+              print("stubs already present")          PY
       - name: package
         working-directory: device
         env:
