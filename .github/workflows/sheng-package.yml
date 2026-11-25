@@ -216,6 +216,26 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
 
+          # 0. board.toml: 只补 QcomGeniSpi（TouchProbe.cpp 需要 GeniSpi.h）
+          bp2 = Path("device/board.toml")
+          lines = bp2.read_text().splitlines(keepends=True)
+          done = False
+          for i, line in enumerate(lines):
+              if line.strip() == '["components"]':
+                  for j in range(i + 1, min(i + 8, len(lines))):
+                      if '"include"' in lines[j]:
+                          if 'QcomGeniSpi' not in lines[j]:
+                              s = lines[j].rstrip('\r\n')
+                              k = s.rindex(']')
+                              lines[j] = s[:k] + ', "QcomGeniSpi"' + s[k:] + chr(10)
+                              done = True
+                              print("components: added QcomGeniSpi")
+                          else:
+                              print("components: QcomGeniSpi already present")
+                          break
+                  break
+          assert done or 'QcomGeniSpi' in ''.join(lines), "components include not found"
+          bp2.write_text(''.join(lines))
           # 1. KeyboardProbe: iOS 配置下 kClamshellLog 的使用处被 #if 掉
           kp = Path("device/package/KeyboardProbe.cpp")
           text = kp.read_text()
