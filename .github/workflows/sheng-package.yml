@@ -265,7 +265,32 @@ jobs:
               cpp.write_text(pragma + text)
               count += 1
           print("pragma added to", count, "package sources")
-          PY
+          # 5. 把 26 profile 的完整归档配方并入 27 profile（27 的列表缺 9 项）
+          merged = ["build-corecrypto-14.py", "build-corecrypto-14.py --namespace",
+                    "component:ArmDTPlatform", "component:ArmCpu",
+                    "component:SoftwareAES", "build-software-aes-bindings.py",
+                    "component:ShengUfs",
+                    "build-sheng-source-storage.py --policy-dir scripts/policies/ipados-27.0.1-24A446",
+                    "component:VirtioMmioBlock", "component:RamBlock",
+                    "build-virtio-mmio-bindings.py --component RamBlock --directory build/ram-block",
+                    "build-virtio-mmio-bindings.py --component VirtioMmioBlock",
+                    "build-mockfs-fixture.py", "build-sheng-platform-power.py", "build-boot-progress.py",
+                    "build-libpthread-kernel.py", "component:Adreno740",
+                    "fetch-sheng-dts.py", "fetch-adreno-inputs.py",
+                    "prepare-sheng-gmu.py", "prepare-sheng-gpu-smmu.py", "prepare-sheng-gmu-votes.py",
+                    "build-adreno740-kits.py", "build-adreno740-accelerator.py",
+                    "component:ShengHidInput", "component:AppleKeyStoreState",
+                    "build-gop-legacy-display-27.py", "build-fileset-release-reference.py --tree . --lto"]
+          lines = p.read_text().splitlines(keepends=True)
+          replaced = False
+          for i, line in enumerate(lines):
+              if '"archives"' in line and not replaced:
+                  lines[i] = '"archives" = [' + ', '.join('"%s"' % x for x in merged) + ']\n'
+                  replaced = True
+                  break
+          assert replaced, "kernel archives not found"
+          p.write_text(''.join(lines))
+          print("archives:", len(merged))          PY
       - name: package
         working-directory: device
         env:
