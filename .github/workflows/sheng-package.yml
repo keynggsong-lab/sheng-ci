@@ -311,7 +311,8 @@ jobs:
               bp.write_text(bt + chr(10) + stubs)
               print("link stubs appended to ButtonProbe.cpp")
           else:
-              print("stubs already present")          PY
+              print("stubs already present")
+          PY
       - name: package
         working-directory: device
         env:
