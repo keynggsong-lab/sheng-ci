@@ -254,7 +254,17 @@ jobs:
               print("KeyboardProbe: kClamshellLog marked maybe_unused")
           else:
               print("KeyboardProbe: marker present or already patched")
-          PY
+          # 4. 给所有 probe 源文件加文件级 pragma，抑制 iOS 配置下未使用符号的 -Werror
+          pragma = ('#pragma clang diagnostic ignored "-Wunused-const-variable"' + chr(10) +
+                    '#pragma clang diagnostic ignored "-Wunused-function"' + chr(10))
+          count = 0
+          for cpp in sorted(Path("device/package").glob("*.cpp")):
+              text = cpp.read_text()
+              if 'Wunused-const-variable' in text:
+                  continue
+              cpp.write_text(pragma + text)
+              count += 1
+          print("pragma added to", count, "package sources")          PY
       - name: package
         working-directory: device
         env:
