@@ -276,7 +276,7 @@ jobs:
           bp = Path("device/package/ButtonProbe.cpp")
           body = bp.read_text()
           if 'cs_native4k_digest_wall' not in body:
-              bp.write_text(body + chr(10) + stubs)
+              bp.write_text(stubs + chr(10) + body)
               print("link stubs appended to ButtonProbe.cpp")
           else:
               print("stubs already present")
