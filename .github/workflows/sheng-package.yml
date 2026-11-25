@@ -245,7 +245,15 @@ jobs:
               print("added -Wno-unused-const-variable")
           else:
               print("flag edit skipped")
-          PY
+          # 3. KeyboardProbe: iOS 配置下 #if 掉 kClamshellLog 的使用处，标记为 maybe_unused
+          kp = Path("device/package/KeyboardProbe.cpp")
+          text = kp.read_text()
+          needle = 'static const char kClamshellLog[] KEYBOARD_CONST'
+          if needle in text and '[[maybe_unused]] ' + needle not in text:
+              kp.write_text(text.replace(needle, '[[maybe_unused]] ' + needle, 1))
+              print("KeyboardProbe: kClamshellLog marked maybe_unused")
+          else:
+              print("KeyboardProbe: marker present or already patched")          PY
       - name: package
         working-directory: device
         env:
