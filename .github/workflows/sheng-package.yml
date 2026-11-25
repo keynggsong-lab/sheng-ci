@@ -272,7 +272,7 @@ jobs:
                     "component:ShengUfs",
                     "build-sheng-source-storage.py --policy-dir scripts/policies/ipados-27.0.1-24A446",
                     "component:VirtioMmioBlock", "component:RamBlock",
-                    "build-mockfs-fixture.py", "build-sheng-platform-power.py", "build-boot-progress.py",
+                    "build-mockfs-fixture.py", "build-boot-progress.py",
                     "build-libpthread-kernel.py", "component:Adreno740",
                     "fetch-sheng-dts.py", "fetch-adreno-inputs.py",
                     "prepare-sheng-gmu.py", "prepare-sheng-gpu-smmu.py", "prepare-sheng-gmu-votes.py",
@@ -303,6 +303,7 @@ jobs:
               'void iokit_physical_descriptor_close_notify(void) {}' + chr(10) +
               'void sheng_ethernet_probe(void) {}' + chr(10) +
               'void sheng_software_aes_probe(void) {}' + chr(10) +
+          'int sheng_boot_watchdog_policy(void *, unsigned long long) { return 0; }' + chr(10) +
               '}' + chr(10)
           )
           bp = Path("device/package/ButtonProbe.cpp")
