@@ -211,30 +211,40 @@ jobs:
           python3 scripts/extract-files.py --section Video
           python3 scripts/extract-files.py --section Video --check
           ls -l .cache/firmware/qcom/sm8550/sheng/vpu30_4v.mbn
-      - name: add geni spi component
+      - name: complete components and relax unused-const warning
         run: |
           python3 - <<'PY'
           from pathlib import Path
+
+          # 1. board.toml: 把 iPadOS 27 基础组件列表补齐到与 17/26 override 一致
+          wanted = ["ArmDTPlatform", "ArmCpu", "SoftwareAES", "ShengUfs", "VirtioMmioBlock",
+                    "RamBlock", "Adreno740", "AdrenoMetal", "GopFramebuffer", "ShengHidInput",
+                    "ShengNovatekTouch", "QcomGeniSpi", "AppleKeyStoreState", "XnuPrelink",
+                    "DarwinBoot", "VerifiedRoot", "ShengPreflight", "AirNir", "Ath12kWifi"]
           p = Path("device/board.toml")
           lines = p.read_text().splitlines(keepends=True)
+          done = False
           for i, line in enumerate(lines):
               if line.strip() == '["components"]':
                   for j in range(i + 1, min(i + 8, len(lines))):
                       if '"include"' in lines[j]:
-                          if 'QcomGeniSpi' in lines[j]:
-                              print('QcomGeniSpi already present')
-                          else:
-                              s = lines[j].rstrip('\r\n')
-                              k = s.rindex(']')
-                              lines[j] = s[:k] + ', "QcomGeniSpi"' + s[k:] + '\n'
-                              print('added QcomGeniSpi to [components] include')
+                          lines[j] = '"include" = [' + ', '.join('"%s"' % n for n in wanted) + ']\n'
+                          done = True
                           break
                   break
+          assert done, "components include not found"
           p.write_text(''.join(lines))
-          for line in p.read_text().splitlines():
-              if '"include"' in line and 'ArmDTPlatform' in line and 'QcomGeniSpi' in line:
-                  print('  ', line.strip()[:160])
-                  break
+          print("components:", len(wanted))
+
+          # 2. 核心脚本: 关掉 unused-const-variable（KeyboardProbe 的 kClamshellLog 在 iOS 配置下被 #if 掉）
+          s = Path("UniXNU/scripts/build-sheng-source-drivers.py")
+          text = s.read_text()
+          flag = "'-Wno-deprecated-enum-enum-conversion'"
+          if flag in text and '-Wno-unused-const-variable' not in text:
+              s.write_text(text.replace(flag, flag + ", '-Wno-unused-const-variable'", 1))
+              print("added -Wno-unused-const-variable")
+          else:
+              print("flag edit skipped")
           PY
       - name: package
         working-directory: device
