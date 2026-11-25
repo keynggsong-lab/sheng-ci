@@ -264,7 +264,8 @@ jobs:
                   continue
               cpp.write_text(pragma + text)
               count += 1
-          print("pragma added to", count, "package sources")          PY
+          print("pragma added to", count, "package sources")
+          PY
       - name: package
         working-directory: device
         env:
