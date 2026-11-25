@@ -217,7 +217,7 @@ jobs:
           from pathlib import Path
 
           # 1. board.toml: 把 iPadOS 27 基础组件列表补齐到与 17/26 override 一致
-          wanted = ["ArmDTPlatform", "ArmCpu", "SoftwareAES", "ShengUfs", "VirtioMmioBlock",
+          wanted = ["ArmDTPlatform", "ArmCpu", "ShengUfs", "VirtioMmioBlock",
                     "RamBlock", "Adreno740", "AdrenoMetal", "GopFramebuffer", "ShengHidInput",
                     "ShengNovatekTouch", "QcomGeniSpi", "AppleKeyStoreState", "XnuPrelink",
                     "DarwinBoot", "VerifiedRoot", "ShengPreflight", "AirNir", "Ath12kWifi"]
