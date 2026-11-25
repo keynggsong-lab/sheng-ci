@@ -290,7 +290,8 @@ jobs:
                   break
           assert replaced, "kernel archives not found"
           p.write_text(''.join(lines))
-          print("archives:", len(merged))          PY
+          print("archives:", len(merged))
+          PY
       - name: package
         working-directory: device
         env:
