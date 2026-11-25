@@ -272,8 +272,6 @@ jobs:
                     "component:ShengUfs",
                     "build-sheng-source-storage.py --policy-dir scripts/policies/ipados-27.0.1-24A446",
                     "component:VirtioMmioBlock", "component:RamBlock",
-                    "build-virtio-mmio-bindings.py --component RamBlock --directory build/ram-block",
-                    "build-virtio-mmio-bindings.py --component VirtioMmioBlock",
                     "build-mockfs-fixture.py", "build-sheng-platform-power.py", "build-boot-progress.py",
                     "build-libpthread-kernel.py", "component:Adreno740",
                     "fetch-sheng-dts.py", "fetch-adreno-inputs.py",
