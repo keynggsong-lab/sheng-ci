@@ -266,10 +266,10 @@ jobs:
               '__attribute__((weak)) unsigned long long cs_native4k_chunk_ticks = 0;' + chr(10) +
               '__attribute__((weak)) unsigned long long cs_native4k_record_ticks = 0;' + chr(10) +
               'extern __attribute__((weak)) const unsigned native_legacy_request_layout[6] = {17, 81, 792, 804, 816, 2624};' + chr(10) +
-              '__attribute__((weak)) void ml_static_mfree_prepare(void) {}' + chr(10) +
-              '__attribute__((weak)) void iokit_physical_descriptor_close_notify(void) {}' + chr(10) +
-              '__attribute__((weak)) void sheng_ethernet_probe(void) {}' + chr(10) +
-              '__attribute__((weak)) void sheng_software_aes_probe(void) {}' + chr(10) +
+              'void ml_static_mfree_prepare(void) {}' + chr(10) +
+              'void iokit_physical_descriptor_close_notify(void) {}' + chr(10) +
+              'void sheng_ethernet_probe(void) {}' + chr(10) +
+              'void sheng_software_aes_probe(void) {}' + chr(10) +
               '__attribute__((weak)) int sheng_boot_watchdog_policy(void *, unsigned long long) { return 0; }' + chr(10) +
               '}' + chr(10)
           )
