@@ -347,6 +347,7 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           INIT_DATA: ${{ inputs.init_data }}
           OS_PROFILE: ${{ inputs.os }}
+          EXTRA_CFLAGS: -Wl,-no_fixup_chains
         run: |
           args=(--os "$OS_PROFILE" --uefi ../uefi-sheng)
           if [ "$OS_PROFILE" = 27 ] && [ "$INIT_DATA" = true ]; then
