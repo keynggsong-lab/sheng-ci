@@ -236,6 +236,17 @@ jobs:
                   break
           assert done or 'QcomGeniSpi' in ''.join(lines), "components include not found"
           bp2.write_text(''.join(lines))
+          # 0c. board.toml: 预链接改用 RELEASE 内核（DEVELOPMENT 太大，放不进原厂布局）
+          bt = Path("device/board.toml").read_text()
+          if '["kernel"."prelink"]' not in bt:
+              bt += (chr(10) + '["kernel"."prelink"]' + chr(10) +
+                     '# Build the prelinked kernel from the RELEASE image: the DEVELOPMENT build is 2.6x' + chr(10) +
+                     '# the size of the original kernelcache and cannot be placed in its layout holes.' + chr(10) +
+                     '"kernel" = "build/xnu/fileset-reference/mach.release.bcm2837.unstripped.noctf"' + chr(10))
+              Path("device/board.toml").write_text(bt)
+              print("board.toml: prelink kernel -> RELEASE build")
+          else:
+              print("board.toml: prelink override already present")
           # 1. KeyboardProbe: iOS 配置下 kClamshellLog 的使用处被 #if 掉
           kp = Path("device/package/KeyboardProbe.cpp")
           text = kp.read_text()
