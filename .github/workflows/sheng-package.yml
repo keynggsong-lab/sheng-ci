@@ -236,7 +236,7 @@ jobs:
                   break
           assert done or 'QcomGeniSpi' in ''.join(lines), "components include not found"
           bp2.write_text(''.join(lines))
-          # 1. KeyboardProbe: iOS 配置下 kClamshellLog 的使用处被 #if 掉
+          # 0b. defconfig: 关闭 chained fixups（XnuPrelink 不支持其 imports 表）          dc = Path("device/configs/sheng_ipados27_defconfig")          dt = dc.read_text()          if 'CONFIG_XNU_KERNEL_CHAINED_FIXUPS=y' in dt:              dc.write_text(dt.replace('CONFIG_XNU_KERNEL_CHAINED_FIXUPS=y',                                       '# MIGRATION: XnuPrelink cannot read chained fixup imports' + chr(10) +                                       'CONFIG_XNU_KERNEL_CHAINED_FIXUPS=n'))              print("defconfig: chained fixups disabled")          # 1. KeyboardProbe: iOS 配置下 kClamshellLog 的使用处被 #if 掉
           kp = Path("device/package/KeyboardProbe.cpp")
           text = kp.read_text()
           needle = 'static const char kClamshellLog[] KEYBOARD_CONST'
@@ -347,7 +347,6 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           INIT_DATA: ${{ inputs.init_data }}
           OS_PROFILE: ${{ inputs.os }}
-          EXTRA_CFLAGS: -Wl,-no_fixup_chains
         run: |
           args=(--os "$OS_PROFILE" --uefi ../uefi-sheng)
           if [ "$OS_PROFILE" = 27 ] && [ "$INIT_DATA" = true ]; then
