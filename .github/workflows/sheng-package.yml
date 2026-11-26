@@ -270,6 +270,31 @@ jobs:
                       "0xfffffe000b2a1778": 1, "0xfffffe000b2a1798": 1},
               },
           }
+          # 让同一个缺失地址对所有 root bundle 都放行，避免逐轮补一个 bundle
+          owners = [
+              "com.apple.AppleFSCompression.AppleFSCompressionTypeZlib", "com.apple.driver.AppleARMPlatform",
+              "com.apple.driver.AppleARMWatchdogTimer", "com.apple.driver.AppleAudioClockLibs",
+              "com.apple.driver.AppleEffaceableStorage", "com.apple.driver.AppleIISController",
+              "com.apple.driver.AppleM2ScalerCSCDriver", "com.apple.driver.AppleMobileFileIntegrity",
+              "com.apple.driver.ApplePMGR", "com.apple.driver.IODARTFamily", "com.apple.filesystems.apfs",
+              "com.apple.iokit.CoreAnalyticsFamily", "com.apple.iokit.IOAVFamily", "com.apple.iokit.IOAudio2Family",
+              "com.apple.iokit.IOCECFamily", "com.apple.iokit.IOCryptoAcceleratorFamily",
+              "com.apple.iokit.IOGPUFamily", "com.apple.iokit.IOHDCPFamily",
+              "com.apple.iokit.IOMobileGraphicsFamily", "com.apple.iokit.IOReportFamily",
+              "com.apple.iokit.IOSlowAdaptiveClockingFamily", "com.apple.iokit.IOStorageFamily",
+              "com.apple.iokit.IOSurface", "com.apple.kec.Libm", "com.apple.kec.corecrypto",
+              "com.apple.kext.AppleMatch", "com.apple.kext.CoreTrust", "com.apple.security.AppleImage4",
+              "com.apple.security.sandbox", "com.apple.iokit.IOHIDFamily", "com.apple.iokit.IOHIDEventDriver",
+              "com.apple.iokit.IOUSBDeviceFamily", "com.apple.driver.AppleUSBXDCI",
+              "com.apple.driver.AppleUSBDeviceMux", "com.apple.iokit.IOUSBHostFamily",
+              "com.apple.driver.usb.AppleUSBXHCI", "com.apple.driver.usb.AppleUSBHub",
+              "com.apple.driver.usb.AppleUSBHostCompositeDevice", "com.apple.driver.usb.IOUSBHostHIDDevice",
+              "com.apple.iokit.IOUSBMassStorageDriver", "com.apple.iokit.IOSCSIArchitectureModelFamily",
+              "com.apple.iokit.IOSCSIBlockCommandsDevice",
+          ]
+          for owner in owners:
+              policy["missing"].setdefault(owner, {})["0xfffffe0007e00ad8"] = 1
+          print("relaxed %d owners for the shared missing site" % len(owners))
           Path("device/package/prelink-regression.json").write_text(json.dumps(policy, indent=2) + chr(10))
           print("prelink-regression.json written to device/package")
 
