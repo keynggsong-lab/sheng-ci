@@ -236,13 +236,6 @@ jobs:
                   break
           assert done or 'QcomGeniSpi' in ''.join(lines), "components include not found"
           bp2.write_text(''.join(lines))
-          # 0b. defconfig: 关闭 chained fixups（XnuPrelink 不支持其 imports 表）
-          dc = Path("device/configs/sheng_ipados27_defconfig")
-          dt = dc.read_text()
-          if 'CONFIG_XNU_KERNEL_CHAINED_FIXUPS=y' in dt:
-              dc.write_text(dt.replace('CONFIG_XNU_KERNEL_CHAINED_FIXUPS=y',
-                                       'CONFIG_XNU_KERNEL_CHAINED_FIXUPS=n'))
-              print("defconfig: chained fixups disabled")
           # 1. KeyboardProbe: iOS 配置下 kClamshellLog 的使用处被 #if 掉
           kp = Path("device/package/KeyboardProbe.cpp")
           text = kp.read_text()
@@ -405,6 +398,41 @@ jobs:
             UniXNU/out/sheng/*/*/kernel/kernel.macho
             UniXNU/out/sheng/*/*/package.manifest.json
 
+      - name: dump kernel imports on failure
+        if: failure()
+        run: |
+          python3 - <<'PY'
+          import struct
+          from pathlib import Path
+
+          LC_CHAINED = 0x80000034
+          images = list(Path("UniXNU/out").rglob("mach.*.unstripped"))
+          if not images:
+              images = list(Path("UniXNU/out").rglob("mach.*"))
+          print("candidate images:", images)
+          for image in images[:3]:
+              data = image.read_bytes()
+              if data[:4] != b"\xcf\xfa\xed\xfe":
+                  print(image, "not MH_MAGIC_64"); continue
+              ncmds = struct.unpack_from("<I", data, 16)[0]
+              off = 32
+              for _ in range(ncmds):
+                  cmd, size = struct.unpack_from("<II", data, off)
+                  if cmd == LC_CHAINED:
+                      dataoff, = struct.unpack_from("<I", data, off + 8)
+                      (ver, starts, imports_off, symbols_off,
+                       imports_count, imports_fmt, symbols_fmt) = struct.unpack_from("<7I", data, dataoff)
+                      print(image.name, "imports_count =", imports_count, "format =", imports_fmt)
+                      for i in range(imports_count):
+                          entry, = struct.unpack_from("<I", data, dataoff + imports_off + 4 * i)
+                          name_off = entry >> 9
+                          lib_ord = entry & 0xff
+                          weak = (entry >> 8) & 1
+                          end = data.index(b"\0", dataoff + symbols_off + name_off)
+                          name = data[dataoff + symbols_off + name_off:end].decode("utf-8", "replace")
+                          print("   %-60s lib=%d weak=%d" % (name, lib_ord, weak))
+                  off += size
+          PY
       - name: upload logs on failure
         if: failure()
         uses: actions/upload-artifact@v4
