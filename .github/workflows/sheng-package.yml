@@ -304,7 +304,7 @@ jobs:
                      '# Prelink the RELEASE image: the DEVELOPMENT build is 2.6x the original kernelcache' + chr(10) +
                      '# and cannot be placed in its layout holes.' + chr(10) +
                      '"kernel" = "build/xnu/fileset-reference/mach.release.bcm2837.unstripped.noctf"' + chr(10) +
-                     '"regression_policy" = "kits/sheng/prelink-regression.json"' + chr(10))
+                     '"regression_policy" = ""' + chr(10))
               Path("device/board.toml").write_text(bt)
               print("board.toml: prelink kernel -> RELEASE, relaxed policy")
           # 1. KeyboardProbe: iOS 配置下 kClamshellLog 的使用处被 #if 掉
